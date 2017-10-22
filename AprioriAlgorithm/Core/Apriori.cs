@@ -107,8 +107,8 @@ namespace AprioriAlgorithm.Core
             foreach (var item in productsPairs.OrderByDescending(x => x.PairSupport))
             {
                 Console.WriteLine(
-                    $"{item.FirstProduct.Product.Description} " +
-                    $"=> {item.SecondProduct.Product.Description}\t" +
+                    $"{item.FirstProduct.Product.Description}\t"+
+                    $"=>{item.SecondProduct.Product.Description}\t" +
                     $"{item.PairSupport * 100}%");
             }
 
