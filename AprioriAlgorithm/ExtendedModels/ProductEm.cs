@@ -8,20 +8,16 @@ namespace AprioriAlgorithm.ExtendedModels
 
         public double? Support { get; set; }
 
-        public double? Confidence { get; set; }
-
         public ProductEm()
         {
             Product = null;
             Support = double.NaN;
-            Confidence = double.NaN;
         }
 
-        public ProductEm(Product product, double? support, double? confidence)
+        public ProductEm(Product product, double? support)
         {
             Product = product;
             Support = support;
-            Confidence = confidence;
         }
     }
 }

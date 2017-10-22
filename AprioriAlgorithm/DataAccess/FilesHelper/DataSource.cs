@@ -74,7 +74,6 @@ namespace AprioriAlgorithm.DataAccess.FilesHelper
                     {
                         Product = new Product(x.ShoppingId, x.ProductId, x.Description),
                         Support = DetermineProductSupport(allProducts, x.Description),
-                        Confidence = double.MinValue
                         }));
             }
         }
@@ -100,11 +99,6 @@ namespace AprioriAlgorithm.DataAccess.FilesHelper
                     Math.Round(support, 3));
             }
             return SingleProductsSupport[description]; 
-        }
-
-        public double? DetermineProdcutConfidence(double? productsSupport, double? productSupport)
-        {
-            return double.MinValue;
         }
     }
 }

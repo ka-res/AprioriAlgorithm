@@ -13,21 +13,27 @@ namespace AprioriAlgorithm.Core
 
         private ResultDestination ResultDestination { get; set;  }
 
-        public double MinmalSupport { get; set; }
+        public double MinimalSupport { get; set; }
+
+        public double MinimalConfidence { get; set; }
 
         public Apriori(DataSource dataSource, 
             ResultDestination resultDestination)
         {
             DataSource = dataSource;
             ResultDestination = resultDestination;
-            MinmalSupport = 0;
+            MinimalSupport = 0;
+            MinimalConfidence = 0;
         }
 
         public Apriori(DataSource dataSource, 
-            ResultDestination resultDestination, double minimumSupport)
+            ResultDestination resultDestination, 
+            double minimalSupport,
+            double minimalConfidence)
             : this(dataSource, resultDestination)
         {
-            MinmalSupport = minimumSupport;
+            MinimalSupport = minimalSupport;
+            MinimalConfidence = minimalConfidence;
         }
 
         public List<ProductEm> GetStrongItems(TransactionsSetEm transactions)
@@ -40,7 +46,7 @@ namespace AprioriAlgorithm.Core
             {
                 foreach (var product in shopping)
                 {
-                    if (product.Support > MinmalSupport
+                    if (product.Support > MinimalSupport
                         && strongList.All(x => x.Product.Description != product.Product.Description))
                     {
                         strongList.Add(product);
@@ -55,19 +61,20 @@ namespace AprioriAlgorithm.Core
             TransactionsSetEm transactions)
         {
             var productsPairs = new List<ProductsPairEm>();
+            var pairSupportDictionary = new Dictionary<string, double>();
+            var pairConfidenceDictionary = new Dictionary<string, double>();
 
             foreach (var firstProduct in strongList)
             {
                 foreach (var shopping in transactions.Shoppings)
                 {
-                    var pairSupportDictionary = new Dictionary<string, double>();
-
                     if (shopping.ProductsEm.All(x => x.Product.Description 
                         != firstProduct.Product.Description))
                         continue;
                     {
                         var remainingProducts = shopping.ProductsEm
                             .Where(x => x.Product.Description != firstProduct.Product.Description);
+
                         foreach (var secondProduct in remainingProducts)
                         {
                             if (!pairSupportDictionary.ContainsKey(firstProduct.Product.Description
@@ -85,7 +92,23 @@ namespace AprioriAlgorithm.Core
                             var pairSupport = pairSupportDictionary[firstProduct.Product.Description
                                                                     + secondProduct.Product.Description];
 
-                            if (pairSupport > MinmalSupport
+                            if (!pairConfidenceDictionary.ContainsKey(firstProduct.Product.Description
+                                + secondProduct.Product.Description))
+                            {
+                                pairConfidenceDictionary.Add(firstProduct.Product.Description
+                                + secondProduct.Product.Description, 
+                                pairSupportDictionary[firstProduct.Product.Description
+                                                      + secondProduct.Product.Description]
+                                                / (double)transactions.Shoppings.Count(x => x.ProductsEm
+                                                        .Any(y => y.Product.Description ==
+                                                        firstProduct.Product.Description)));
+                            }
+
+                            var pairConfidence = pairConfidenceDictionary[firstProduct.Product.Description
+                                                                    + secondProduct.Product.Description];
+
+                            if (pairSupport > MinimalSupport
+                                && pairConfidence > MinimalConfidence
                                 && productsPairs.All(x => x.FirstProduct.Product.Description 
                                 != firstProduct.Product.Description)
                                 && productsPairs.All(x => x.SecondProduct.Product.Description
@@ -96,7 +119,7 @@ namespace AprioriAlgorithm.Core
                                     FirstProduct = firstProduct,
                                     SecondProduct = secondProduct,
                                     PairSupport = pairSupport,
-                                    PairConfidence = double.NaN
+                                    PairConfidence = pairConfidence
                                 });
                             }
                         }
@@ -109,7 +132,8 @@ namespace AprioriAlgorithm.Core
                 Console.WriteLine(
                     $"{item.FirstProduct.Product.Description}\t"+
                     $"=>{item.SecondProduct.Product.Description}\t" +
-                    $"{item.PairSupport * 100}%");
+                    $"{item.PairSupport * 100}%\t" +
+                    $"{item.PairConfidence * 100}%");
             }
 
             return productsPairs;
