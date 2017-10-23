@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using AprioriAlgorithm.ExtendedModels;
 using AprioriAlgorithm.DataAccess.FilesHelper;
+using System.Text;
 
 namespace AprioriAlgorithm.Core
 {
@@ -58,7 +59,7 @@ namespace AprioriAlgorithm.Core
         }
 
         public List<ProductsPairEm> GetStrongTwoProductsItems(List<ProductEm> strongList, 
-            TransactionsSetEm transactions)
+            TransactionsSetEm transactions, bool ifSaveEnabled)
         {
             var productsPairs = new List<ProductsPairEm>();
             var pairSupportDictionary = new Dictionary<string, double>();
@@ -87,7 +88,7 @@ namespace AprioriAlgorithm.Core
                                                 secondProduct.Product.Description)
                                                 && x.ProductsEm.Any(z => z.Product.Description
                                                 == firstProduct.Product.Description))
-                                    / (double)transactions.Shoppings.Count);
+                                                / (double)transactions.Shoppings.Count);
                             }
                             var pairSupport = pairSupportDictionary[firstProduct.Product.Description
                                                                     + secondProduct.Product.Description];
@@ -96,12 +97,15 @@ namespace AprioriAlgorithm.Core
                                 + secondProduct.Product.Description))
                             {
                                 pairConfidenceDictionary.Add(firstProduct.Product.Description
-                                + secondProduct.Product.Description, 
-                                pairSupportDictionary[firstProduct.Product.Description
-                                                      + secondProduct.Product.Description]
+                                + secondProduct.Product.Description,
+                                (double)transactions.Shoppings.Count(x => x.ProductsEm
+                                                .Any(y => y.Product.Description ==
+                                                secondProduct.Product.Description)
+                                                && x.ProductsEm.Any(z => z.Product.Description
+                                                == firstProduct.Product.Description))
                                                 / (double)transactions.Shoppings.Count(x => x.ProductsEm
-                                                        .Any(y => y.Product.Description ==
-                                                        firstProduct.Product.Description)));
+                                                .Any(y => y.Product.Description ==
+                                                firstProduct.Product.Description)));
                             }
 
                             var pairConfidence = pairConfidenceDictionary[firstProduct.Product.Description
@@ -126,14 +130,22 @@ namespace AprioriAlgorithm.Core
                     }
                 }
             }
-            
-            foreach (var item in productsPairs.OrderByDescending(x => x.PairSupport))
-            {
-                Console.WriteLine(
-                    $"{item.FirstProduct.Product.Description}\t"+
+
+            var output = new StringBuilder();
+
+            foreach (var item in productsPairs.OrderByDescending(x => x.PairSupport).ThenByDescending(x => x.PairConfidence))
+            {   
+                output.Append($"{item.FirstProduct.Product.Description}\t" +
                     $"=>{item.SecondProduct.Product.Description}\t" +
                     $"{item.PairSupport * 100}%\t" +
-                    $"{item.PairConfidence * 100}%");
+                    $"{item.PairConfidence * 100}%\r\n");                
+            }
+
+            Console.WriteLine(output.ToString());
+
+            if (ifSaveEnabled)
+            {
+                ResultDestination.SaveResultToFile(output.ToString(), MinimalSupport, MinimalConfidence);
             }
 
             return productsPairs;
